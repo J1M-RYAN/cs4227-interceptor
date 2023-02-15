@@ -177,4 +177,55 @@ class WeatherStation {
   }
 }
 
+interface IRequest {}
+
+interface Interceptor {
+  intercept: (request: IRequest) => void;
+}
+
+interface IDispatcher {
+  registerInterceptor: (interceptor: Interceptor) => void;
+  removeInterceptor: (interceptor: Interceptor) => void;
+  dispatch: (request: IRequest) => void;
+}
+
+class Dispatcher implements IDispatcher {
+  private interceptors: Set<Interceptor> = new Set();
+
+  public registerInterceptor(interceptor: Interceptor): void {
+    this.interceptors.add(interceptor);
+  }
+
+  public removeInterceptor(interceptor: Interceptor): void {
+    this.interceptors.delete(interceptor);
+  }
+
+  public dispatch(request: IRequest): void {
+    this.interceptors.forEach((interceptor) => {
+      interceptor.intercept(request);
+    });
+  }
+}
+
+class Application {
+  private dispatcher: IDispatcher;
+
+  constructor(dispatcher: IDispatcher) {
+    this.dispatcher = dispatcher;
+  }
+
+  public run(): void {
+    const request: IRequest = {};
+    this.dispatcher.dispatch(request);
+  }
+
+  public registerInterceptor(interceptor: Interceptor): void {
+    this.dispatcher.registerInterceptor(interceptor);
+  }
+
+  public removeInterceptor(interceptor: Interceptor): void {
+    this.dispatcher.removeInterceptor(interceptor);
+  }
+}
+
 WeatherStation.main();
