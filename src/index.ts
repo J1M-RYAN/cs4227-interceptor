@@ -177,16 +177,56 @@ class WeatherStation {
   }
 }
 
-interface IRequest {}
+// Interceptor
+
+type Action = "get" | "set";
+
+type WeatherProperty = "temperature" | "humidity" | "pressure";
+
+type ContextAction = {
+  type: Action;
+  property: WeatherProperty;
+  value?: number;
+};
+
+type ContextObject = ContextAction[];
 
 interface Interceptor {
-  intercept: (request: IRequest) => void;
+  intercept: (request: ContextObject) => void;
+}
+
+class DisplayInterceptor implements Interceptor {
+  public intercept(request: ContextObject): void {
+    request.forEach((action) => {
+      if (action.type === "get") {
+        console.log(`${action.property} is ${action.value}}`);
+      }
+    });
+  }
+}
+
+class LoggingInterceptor implements Interceptor {
+  public intercept(request: ContextObject): void {
+    request.forEach((action) => {
+      switch (action.type) {
+        case "get":
+          console.log(`Logging get of ${action.property}`);
+          break;
+        case "set":
+          console.log(
+            `Logging set of ${action.property} to value: ${action.value}`
+          );
+          break;
+      }
+    });
+  }
 }
 
 interface IDispatcher {
   registerInterceptor: (interceptor: Interceptor) => void;
   removeInterceptor: (interceptor: Interceptor) => void;
-  dispatch: (request: IRequest) => void;
+  dispatch: (request: ContextObject) => void;
+  iterateList: () => void;
 }
 
 class Dispatcher implements IDispatcher {
@@ -200,9 +240,15 @@ class Dispatcher implements IDispatcher {
     this.interceptors.delete(interceptor);
   }
 
-  public dispatch(request: IRequest): void {
+  public dispatch(contextObject: ContextObject): void {
     this.interceptors.forEach((interceptor) => {
-      interceptor.intercept(request);
+      interceptor.intercept(contextObject);
+    });
+  }
+
+  public iterateList(): void {
+    this.interceptors.forEach((interceptor) => {
+      console.log(interceptor);
     });
   }
 }
@@ -215,7 +261,30 @@ class Application {
   }
 
   public run(): void {
-    const request: IRequest = {};
+    this.dispatcher.dispatch([
+      {
+        type: "set",
+        property: "temperature",
+        value: 80,
+      },
+      {
+        type: "set",
+        property: "humidity",
+        value: 65,
+      },
+      {
+        type: "set",
+        property: "pressure",
+        value: 30.4,
+      },
+      {
+        type: "get",
+        property: "temperature",
+      },
+    ]);
+  }
+
+  public dispatch(request: ContextObject): void {
     this.dispatcher.dispatch(request);
   }
 
@@ -228,4 +297,34 @@ class Application {
   }
 }
 
-WeatherStation.main();
+const dispatcher = new Dispatcher();
+const application = new Application(dispatcher);
+application.registerInterceptor(new DisplayInterceptor());
+application.registerInterceptor(new LoggingInterceptor());
+
+const contextObject: ContextObject = [
+  {
+    type: "set",
+    property: "temperature",
+    value: 81,
+  },
+  {
+    type: "set",
+    property: "humidity",
+    value: 66,
+  },
+  {
+    type: "set",
+    property: "pressure",
+    value: 31.4,
+  },
+  {
+    type: "get",
+    property: "temperature",
+  },
+];
+
+application.dispatch(contextObject);
+
+//when the application calls dispatch on the dispatcher
+// what is passed into the dispatch function? is it the context object
