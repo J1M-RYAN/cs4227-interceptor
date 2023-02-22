@@ -260,30 +260,6 @@ class Application {
     this.dispatcher = dispatcher;
   }
 
-  public run(): void {
-    this.dispatcher.dispatch([
-      {
-        type: "set",
-        property: "temperature",
-        value: 80,
-      },
-      {
-        type: "set",
-        property: "humidity",
-        value: 65,
-      },
-      {
-        type: "set",
-        property: "pressure",
-        value: 30.4,
-      },
-      {
-        type: "get",
-        property: "temperature",
-      },
-    ]);
-  }
-
   public dispatch(request: ContextObject): void {
     this.dispatcher.dispatch(request);
   }
@@ -328,3 +304,6 @@ application.dispatch(contextObject);
 
 //when the application calls dispatch on the dispatcher
 // what is passed into the dispatch function? is it the context object
+
+// can an interceptor change the context object? if so, how? if not, why not?
+// where does is the weather data stored? in the context object? in the weather data class?
