@@ -1,3 +1,4 @@
+import inquirer from "inquirer";
 interface SetMeasurements {
   setMeasurements: (
     temperature: number,
@@ -307,3 +308,55 @@ application.dispatch(contextObject);
 
 // can an interceptor change the context object? if so, how? if not, why not?
 // where does is the weather data stored? in the context object? in the weather data class?
+
+inquirer
+  .prompt([
+    {
+      type: "list",
+      name: "weatherAction",
+      message: "Which action would you like to perform?",
+      choices: ["View Weather Data", "Edit Weather Data"],
+    },
+  ])
+  .then((answers) => {
+    console.info("Answer:", answers.weatherAction);
+
+    if (answers.weatherAction === "View Weather Data") {
+      const contextObject: ContextObject = [
+        {
+          type: "get",
+          property: "temperature",
+        },
+        {
+          type: "get",
+          property: "humidity",
+        },
+        {
+          type: "get",
+          property: "pressure",
+        },
+      ];
+
+      application.dispatch(contextObject);
+    } else if (answers.weatherAction === "Edit Weather Data") {
+      const contextObject: ContextObject = [
+        {
+          type: "set",
+          property: "temperature",
+          value: 81,
+        },
+        {
+          type: "set",
+          property: "humidity",
+          value: 66,
+        },
+        {
+          type: "set",
+          property: "pressure",
+          value: 31.4,
+        },
+      ];
+
+      application.dispatch(contextObject);
+    }
+  });
