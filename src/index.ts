@@ -1,4 +1,6 @@
 import inquirer from "inquirer";
+import chalk from "chalk";
+
 interface SetMeasurements {
   setMeasurements: (
     temperature: number,
@@ -48,6 +50,9 @@ class WeatherData implements Subject, SetMeasurements, GetMeasurements {
   }
 
   public measurementsChanged(): void {
+    const context = new ContextObject(this);
+    Dispatcher.getInstance().dispatch(context);
+
     this.notifyObservers();
   }
 
@@ -59,6 +64,7 @@ class WeatherData implements Subject, SetMeasurements, GetMeasurements {
     this.temperature = temperature;
     this.humidity = humidity;
     this.pressure = pressure;
+
     this.measurementsChanged();
   }
 
@@ -72,6 +78,21 @@ class WeatherData implements Subject, SetMeasurements, GetMeasurements {
 
   public getPressure(): number {
     return this.pressure;
+  }
+
+  public setTemperature(temperature: number): void {
+    this.temperature = temperature;
+    this.measurementsChanged();
+  }
+
+  public setHumidity(humidity: number): void {
+    this.humidity = humidity;
+    this.measurementsChanged();
+  }
+
+  public setPressure(pressure: number): void {
+    this.pressure = pressure;
+    this.measurementsChanged();
   }
 }
 
@@ -88,6 +109,7 @@ class CurrentConditionsDisplay implements Observer, DisplayElement {
   public update(temperature: number, humidity: number, pressure: number): void {
     this.temperature = temperature;
     this.humidity = humidity;
+
     this.display();
   }
 
@@ -165,61 +187,66 @@ class ForecastDisplay implements Observer, DisplayElement {
 }
 
 class WeatherStation {
-  public static main(): void {
-    const weatherData = new WeatherData();
+  private weatherData: WeatherData;
+  constructor(weatherData: WeatherData) {
+    this.weatherData = weatherData;
 
     const currentDisplay = new CurrentConditionsDisplay(weatherData);
     const statisticsDisplay = new StatisticsDisplay(weatherData);
     const forecastDisplay = new ForecastDisplay(weatherData);
 
     weatherData.setMeasurements(80, 65, 30.4);
-    weatherData.setMeasurements(82, 70, 29.2);
-    weatherData.setMeasurements(78, 90, 29.2);
   }
 }
 
-// Interceptor
+class ContextObject {
+  private weatherData: WeatherData;
 
-type Action = "get" | "set";
+  constructor(weatherData: WeatherData) {
+    this.weatherData = weatherData;
+  }
 
-type WeatherProperty = "temperature" | "humidity" | "pressure";
+  public setTemperature(temperature: number): void {
+    this.weatherData.setTemperature(temperature);
+  }
 
-type ContextAction = {
-  type: Action;
-  property: WeatherProperty;
-  value?: number;
-};
+  public setHumidity(humidity: number): void {
+    this.weatherData.setHumidity(humidity);
+  }
 
-type ContextObject = ContextAction[];
+  public setPressure(pressure: number): void {
+    this.weatherData.setPressure(pressure);
+  }
+
+  public getTemperature(): number {
+    return this.weatherData.getTemperature();
+  }
+
+  public getHumidity(): number {
+    return this.weatherData.getHumidity();
+  }
+
+  public getPressure(): number {
+    return this.weatherData.getPressure();
+  }
+}
 
 interface Interceptor {
   intercept: (request: ContextObject) => void;
 }
 
-class DisplayInterceptor implements Interceptor {
-  public intercept(request: ContextObject): void {
-    request.forEach((action) => {
-      if (action.type === "get") {
-        console.log(`${action.property} is ${action.value}}`);
-      }
-    });
-  }
-}
-
-class LoggingInterceptor implements Interceptor {
-  public intercept(request: ContextObject): void {
-    request.forEach((action) => {
-      switch (action.type) {
-        case "get":
-          console.log(`Logging get of ${action.property}`);
-          break;
-        case "set":
-          console.log(
-            `Logging set of ${action.property} to value: ${action.value}`
-          );
-          break;
-      }
-    });
+class MeasurementsChangedLogger implements Interceptor {
+  public intercept(context: ContextObject): void {
+    console.log(chalk.yellow.bgBlack.bold("MeasurementsChangedLogger"));
+    console.log(
+      chalk.yellow.bgBlack.bold("Temperature: " + context.getTemperature())
+    );
+    console.log(
+      chalk.yellow.bgBlack.bold("Humidity: " + context.getHumidity())
+    );
+    console.log(
+      chalk.yellow.bgBlack.bold("Pressure: " + context.getPressure())
+    );
   }
 }
 
@@ -227,11 +254,18 @@ interface IDispatcher {
   registerInterceptor: (interceptor: Interceptor) => void;
   removeInterceptor: (interceptor: Interceptor) => void;
   dispatch: (request: ContextObject) => void;
-  iterateList: () => void;
 }
 
 class Dispatcher implements IDispatcher {
   private interceptors: Set<Interceptor> = new Set();
+  private static dispatcher: IDispatcher;
+
+  public static getInstance(): IDispatcher {
+    if (!Dispatcher.dispatcher) {
+      Dispatcher.dispatcher = new Dispatcher();
+    }
+    return Dispatcher.dispatcher;
+  }
 
   public registerInterceptor(interceptor: Interceptor): void {
     this.interceptors.add(interceptor);
@@ -244,12 +278,6 @@ class Dispatcher implements IDispatcher {
   public dispatch(contextObject: ContextObject): void {
     this.interceptors.forEach((interceptor) => {
       interceptor.intercept(contextObject);
-    });
-  }
-
-  public iterateList(): void {
-    this.interceptors.forEach((interceptor) => {
-      console.log(interceptor);
     });
   }
 }
@@ -274,89 +302,63 @@ class Application {
   }
 }
 
-const dispatcher = new Dispatcher();
+const weatherData = new WeatherData();
+const weatherStation = new WeatherStation(weatherData);
+const dispatcher = Dispatcher.getInstance();
 const application = new Application(dispatcher);
-application.registerInterceptor(new DisplayInterceptor());
-application.registerInterceptor(new LoggingInterceptor());
 
-const contextObject: ContextObject = [
-  {
-    type: "set",
-    property: "temperature",
-    value: 81,
-  },
-  {
-    type: "set",
-    property: "humidity",
-    value: 66,
-  },
-  {
-    type: "set",
-    property: "pressure",
-    value: 31.4,
-  },
-  {
-    type: "get",
-    property: "temperature",
-  },
-];
+application.registerInterceptor(new MeasurementsChangedLogger());
 
-application.dispatch(contextObject);
+function promptUser() {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "weatherAction",
+        message: "Which action would you like to perform?",
+        choices: ["View Weather Data", "Edit Weather Data", "Exit"],
+      },
+    ])
+    .then((answers) => {
+      console.info("Answer:", answers.weatherAction);
 
-//when the application calls dispatch on the dispatcher
-// what is passed into the dispatch function? is it the context object
+      if (answers.weatherAction === "View Weather Data") {
+        weatherData.getTemperature();
 
-// can an interceptor change the context object? if so, how? if not, why not?
-// where does is the weather data stored? in the context object? in the weather data class?
+        promptUser();
+      } else if (answers.weatherAction === "Edit Weather Data") {
+        inquirer
+          .prompt([
+            {
+              type: "list",
+              name: "weatherProperty",
+              message: "Which weather property would you like to edit?",
+              choices: ["temperature", "humidity", "pressure"],
+            },
+            {
+              type: "number",
+              name: "newValue",
+              message:
+                "What is the new value for the selected weather property?",
+            },
+          ])
+          .then((answers) => {
+            if (answers.weatherProperty === "temperature") {
+              weatherData.setTemperature(answers.newValue);
+            } else if (answers.weatherProperty === "humidity") {
+              weatherData.setHumidity(answers.newValue);
+            } else if (answers.weatherProperty === "pressure") {
+              weatherData.setPressure(answers.newValue);
+            }
+            promptUser();
+          });
+      } else if (answers.weatherAction === "Exit") {
+        console.log("Exiting program.");
+      }
+    });
+}
 
-inquirer
-  .prompt([
-    {
-      type: "list",
-      name: "weatherAction",
-      message: "Which action would you like to perform?",
-      choices: ["View Weather Data", "Edit Weather Data"],
-    },
-  ])
-  .then((answers) => {
-    console.info("Answer:", answers.weatherAction);
+promptUser();
 
-    if (answers.weatherAction === "View Weather Data") {
-      const contextObject: ContextObject = [
-        {
-          type: "get",
-          property: "temperature",
-        },
-        {
-          type: "get",
-          property: "humidity",
-        },
-        {
-          type: "get",
-          property: "pressure",
-        },
-      ];
-
-      application.dispatch(contextObject);
-    } else if (answers.weatherAction === "Edit Weather Data") {
-      const contextObject: ContextObject = [
-        {
-          type: "set",
-          property: "temperature",
-          value: 81,
-        },
-        {
-          type: "set",
-          property: "humidity",
-          value: 66,
-        },
-        {
-          type: "set",
-          property: "pressure",
-          value: 31.4,
-        },
-      ];
-
-      application.dispatch(contextObject);
-    }
-  });
+/// add remove interceptor to prompt
+// add or remove logger
