@@ -26,8 +26,7 @@ function promptUser() {
       console.info("Answer:", answers.weatherAction);
 
       if (answers.weatherAction === "View Weather Data") {
-        weatherData.getTemperature();
-
+        weatherStation.display();
         promptUser();
       } else if (answers.weatherAction === "Edit Weather Data") {
         inquirer

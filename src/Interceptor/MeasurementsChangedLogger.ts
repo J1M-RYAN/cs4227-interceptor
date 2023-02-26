@@ -6,13 +6,14 @@ class MeasurementsChangedLogger implements Interceptor {
   public intercept(context: ContextObject): void {
     console.log(chalk.yellow.bgBlack.bold("MeasurementsChangedLogger"));
     console.log(
-      chalk.yellow.bgBlack.bold("Temperature: " + context.getTemperature())
-    );
-    console.log(
-      chalk.yellow.bgBlack.bold("Humidity: " + context.getHumidity())
-    );
-    console.log(
-      chalk.yellow.bgBlack.bold("Pressure: " + context.getPressure())
+      chalk.yellow.bgBlack.bold(
+        "Temperature: " +
+          context.getTemperature() +
+          ", Humidity: " +
+          context.getHumidity() +
+          ", Pressure: " +
+          context.getPressure()
+      )
     );
   }
 }

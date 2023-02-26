@@ -1,6 +1,3 @@
-import Interceptor from "../Interceptor/Interceptor";
-import MeasurementsChangedLogger from "../Interceptor/MeasurementsChangedLogger";
-import IDispatcher from "../Interceptor/IDispatcher";
 import Dispatcher from "../Interceptor/Dispatcher";
 
 describe("dispatcher interface", () => {

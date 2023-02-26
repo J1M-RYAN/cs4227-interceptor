@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import DisplayElement from "../Displays/DisplayElement";
 import Observer from "../WeatherStation/Observer/observer";
 import WeatherData from "../WeatherStation/WeatherData";
@@ -31,9 +32,10 @@ class StatisticsDisplay implements Observer, DisplayElement {
 
   public display(): void {
     console.log(
-      `Avg/Max/Min temperature = ${this.tempSum / this.numReadings}/${
-        this.maxTemp
-      }/${this.minTemp}`
+      chalk.blueBright.inverse.bold("Avg/Max/Min temperature:") +
+        chalk.magentaBright(`${this.tempSum / this.numReadings} `) +
+        chalk.redBright(`${this.maxTemp}/`) +
+        chalk.cyan(`${this.minTemp}`)
     );
   }
 }

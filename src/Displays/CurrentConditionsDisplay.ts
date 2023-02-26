@@ -1,6 +1,7 @@
 import DisplayElement from "./DisplayElement";
 import Observer from "../WeatherStation/Observer/observer";
 import Subject from "../WeatherStation/Observer/subject";
+import chalk from "chalk";
 
 class CurrentConditionsDisplay implements Observer, DisplayElement {
   private temperature: number = -1;
@@ -21,7 +22,9 @@ class CurrentConditionsDisplay implements Observer, DisplayElement {
 
   public display(): void {
     console.log(
-      `Current conditions: ${this.temperature}F degrees and ${this.humidity}% humidity`
+      chalk.cyan.inverse.bold("Current conditions:") +
+        chalk.yellowBright(`${this.temperature}F degrees and `) +
+        chalk.magentaBright(`${this.humidity}% humidity`)
     );
   }
 }
